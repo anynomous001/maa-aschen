@@ -2,10 +2,11 @@
  * Live road traffic next to each pandal, from TomTom's Traffic Flow API (free tier: 2,500 calls a day).
  * A cron run every 15 minutes checks a quarter of the pandals, so each is refreshed hourly and one run stays well under
  * the Workers limit of 50 outbound calls. Runs only on Puja days and in the evening/night, when crowds build.
- * The result is a congestion score per pandal that shared/crowd.mjs uses to nudge the queue estimate.
+ * The result is a congestion score per pandal (vehicle speed on the nearest road vs its normal speed). It is shown as
+ * road traffic, never as the crowd or queue at the pandal: TomTom measures cars, not people.
  */
 import data from '../../data/pandals.json';
-import { DAY_LOAD, ist } from '../../shared/crowd.mjs';
+import { TRAFFIC_DATES, ist } from '../../shared/crowd.mjs';
 import type { Traffic } from '../../shared/crowd.mjs';
 import type { Env } from './env';
 
@@ -21,7 +22,7 @@ export function trafficActive(now: number): boolean {
   const { date, hour } = ist(now);
   // Before 5 am it is still the previous evening's Puja night.
   const day = hour < 5 ? ist(now - 6 * 3600_000).date : date;
-  return day in DAY_LOAD && ACTIVE_HOURS.has(hour);
+  return TRAFFIC_DATES.includes(day) && ACTIVE_HOURS.has(hour);
 }
 
 interface FlowSegment {

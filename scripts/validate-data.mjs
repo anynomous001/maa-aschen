@@ -59,15 +59,6 @@ if (existsSync(resolve(root, 'data/pandals.json'))) {
   for (const s of sponsors) for (const id of s.pandalIds ?? []) if (!pids.has(id)) err(`sponsors[${s.id}]: unknown pandalId ${id}`);
 }
 
-// Crowd tiers (queue estimate)
-if (existsSync(resolve(root, 'data/crowd.json'))) {
-  const known = new Set(load('pandals.json').pandals.map((p) => p.id));
-  for (const [id, tier] of Object.entries(load('crowd.json').tiers)) {
-    if (!known.has(id)) err(`crowd.tiers: unknown pandal ${id}`);
-    if (!['A', 'B', 'C'].includes(tier)) err(`crowd.tiers[${id}]: tier must be A, B or C`);
-  }
-}
-
 // Stations (nearest metro / train station on each pandal)
 if (existsSync(resolve(root, 'data/stations.json'))) {
   const sids = new Set();
