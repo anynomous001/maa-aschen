@@ -2764,3 +2764,29 @@ body.has-next-bar .finder {
   font: 700 13px/1 var(--font-body);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
+
+/* Crowd estimate on cards */
+.pm-crowd-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  margin: 0 0 0.45rem;
+  font-size: 0.82rem;
+}
+.pm-crowd {
+  font-weight: 600;
+}
+.pm-crowd.lv-low { color: #7fdca4; }
+.pm-crowd.lv-mid { color: #f5b45a; }
+.pm-crowd.lv-high { color: #ff8a73; }
+.pm-crowd-live {
+  color: var(--text);
+}
+.pm-crowd-tip {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.pm-batch-queue {
+  color: #f5b45a;
+}

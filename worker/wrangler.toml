@@ -25,6 +25,10 @@ new_sqlite_classes = ["Bookings"]
 binding = "LOGOS"
 bucket_name = "mahalaya-sponsor-logos"
 
+# Live road traffic next to pandals (TomTom), every 15 minutes; the code skips non-Puja days and daytime.
+[triggers]
+crons = ["*/15 * * * *"]
+
 [vars]
 # Comma-separated origins allowed to call the API (your site + local dev).
 ALLOWED_ORIGINS = "https://maa-aschen-nine.vercel.app,https://agomonir-sure.pages.dev,https://mahalaya-live.pages.dev,https://agomonir-sure.vercel.app,http://localhost:5173,http://localhost:4173"
@@ -38,4 +42,5 @@ ALLOWED_ORIGINS = "https://maa-aschen-nine.vercel.app,https://agomonir-sure.page
 #   npx wrangler secret put DODO_PRODUCT_ID
 #   npx wrangler secret put DODO_ENVIRONMENT           (live_mode for real money)
 #   npx wrangler secret put ADMIN_TOKEN
+#   npx wrangler secret put TOMTOM_KEY                 (live traffic near pandals; free key from developer.tomtom.com)
 # For local dev, put them in worker/.dev.vars (git-ignored); see .dev.vars.example.

@@ -7,12 +7,15 @@
  *   GET  /stats/refs                → per-channel counts (see ChannelStats)
  *   GET  /polls?id=…                → poll totals, plus this visitor's own votes
  *   POST /polls/vote { id, poll, choice } → one vote per visitor per poll (changeable)
+ *   POST /go    { id, pandal }      → someone tapped Directions to a pandal (counted for an hour, anonymously)
+ *   GET  /crowd                     → live road traffic per pandal + Directions taps in the last hour
  *
  * `id` is a random string the browser keeps in localStorage — no cookies, no IPs,
  * nothing personal is stored. "Online" = pinged within the last 150 seconds.
  */
 import { DurableObject } from 'cloudflare:workers';
 
+import type { Traffic } from '../../shared/crowd.mjs';
 import type { Env } from './env';
 
 export interface Stats {
@@ -49,7 +52,22 @@ export interface ChannelStats {
   listeners: number; // visitors who played the radio at least once
 }
 
+/** Directions taps count for this long; one per visitor per pandal per GO_REPEAT_MS. */
+const GO_WINDOW_MS = 60 * 60_000;
+const GO_REPEAT_MS = 30 * 60_000;
+
+export interface Crowd {
+  traffic: Record<string, Traffic>;
+  /** Directions taps per pandal in the last hour. */
+  going: Record<string, number>;
+  at: number;
+}
+
 export class Counter extends DurableObject<Env> {
+  private traffic: Record<string, Traffic> = {};
+  /** pandal id → tap times (last hour). */
+  private going: Record<string, number[]> = {};
+  private goSeen = new Map<string, number>();
   private total = 0;
   private refs: Record<string, ChannelStats> = {};
   private listened = new Set<string>();
@@ -63,6 +81,8 @@ export class Counter extends DurableObject<Env> {
       this.total = (await ctx.storage.get<number>('total')) ?? 0;
       this.refs = (await ctx.storage.get<Record<string, ChannelStats>>('refs')) ?? {};
       this.polls = (await ctx.storage.get<PollCounts>('polls')) ?? {};
+      this.traffic = (await ctx.storage.get<Record<string, Traffic>>('traffic')) ?? {};
+      this.going = (await ctx.storage.get<Record<string, number[]>>('going')) ?? {};
     });
   }
 
@@ -143,6 +163,41 @@ export class Counter extends DurableObject<Env> {
       await this.ctx.storage.put({ [key]: choice, polls: this.polls });
     }
     return this.pollResults(id);
+  }
+
+  /** Merges a cron run's traffic readings (each run covers a quarter of the pandals). */
+  async setTraffic(update: Record<string, Traffic>): Promise<void> {
+    if (!Object.keys(update).length) return;
+    Object.assign(this.traffic, update);
+    await this.ctx.storage.put('traffic', this.traffic);
+  }
+
+  /** A known visitor tapped Directions to `pandal`. Returns false for an unknown visitor. */
+  async go(id: string, pandal: string): Promise<boolean> {
+    if ((await this.refOf(id)) === null) return false;
+    const now = Date.now();
+    const key = `${id}:${pandal}`;
+    if (now - (this.goSeen.get(key) ?? 0) < GO_REPEAT_MS) return true;
+    this.goSeen.set(key, now);
+    (this.going[pandal] ??= []).push(now);
+    this.trimGoing(now);
+    await this.ctx.storage.put('going', this.going);
+    return true;
+  }
+
+  private trimGoing(now: number) {
+    for (const [p, times] of Object.entries(this.going)) {
+      const fresh = times.filter((t) => now - t < GO_WINDOW_MS);
+      if (fresh.length) this.going[p] = fresh;
+      else delete this.going[p];
+    }
+    for (const [k, t] of this.goSeen) if (now - t >= GO_REPEAT_MS) this.goSeen.delete(k);
+  }
+
+  crowd(): Crowd {
+    const now = Date.now();
+    this.trimGoing(now);
+    return { traffic: this.traffic, going: Object.fromEntries(Object.entries(this.going).map(([p, t]) => [p, t.length])), at: now };
   }
 
   channels(): { channels: Record<string, ChannelStats>; total: number } {

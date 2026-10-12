@@ -12,6 +12,9 @@ import { type LatLng, directionsUrl, distanceKm, routeLegs, routeUrl } from '../
 import { scrollToEl } from '../lib/smooth-scroll';
 import { sponsorFor, sponsorHref } from '../lib/sponsors';
 import stationData from '../../data/stations.json';
+import crowdData from '../../data/crowd.json';
+import { crowdNow, queueRange } from '../../shared/crowd.mjs';
+import { goingTo, reportGo, trafficFor } from './crowd';
 import { type Batch, type Station, type StationHit, makeBatches, nearestStation, walkMinutes } from '../../shared/hopping.mjs';
 
 interface Pandal extends LatLng {
@@ -82,6 +85,8 @@ function visited(): Record<string, number> {
 }
 /** Records that someone set off for these pandals (the last one is where they're headed). */
 function markGo(ids: string[]) {
+  // The API counts where people are heading (🔥 on busy pandals); one report per trip, for its first stop.
+  reportGo(ids.find((id) => byId.has(id) && !visited()[id]) ?? ids[0]);
   const v = visited();
   for (const id of ids) v[id] = Date.now();
   writeStore(VISITED_KEY, v);
@@ -128,6 +133,34 @@ function stationHTML(hit: StationHit | null | undefined): string {
   const line = hit.station.line ? `<i class="line-dot line-${hit.station.line.toLowerCase()}" title="${esc(hit.station.line)}"></i>` : '';
   return `<span class="pm-station">${line}${esc(stationText(hit))}</span>`;
 }
+// ── Crowds: estimate from tier × day × hour, nudged by live road traffic; 🔥 from Directions taps ──
+const tierOf = (id: string) => (crowdData.tiers as Record<string, string>)[id] ?? 'C';
+const crowdOf = (p: Pandal) => crowdNow(tierOf(p.id), Date.now(), trafficFor(p.id));
+/** People who tapped Directions to a pandal in the last hour, shown from this many. */
+const GOING_MIN = 3;
+function crowdHTML(p: Pandal): string {
+  const c = crowdOf(p);
+  const tier = tierOf(p.id);
+  const parts: string[] = [];
+  if (c) {
+    const [lo, hi] = queueRange(c.minutes);
+    const icon = { low: '🟢', mid: '🟠', high: '🔴' }[c.level];
+    parts.push(
+      `<span class="pm-crowd lv-${c.level}">${icon} ${esc(t('pm.crowd.' + c.level))}${c.level === 'low' ? '' : ` · ${esc(t('pm.crowd.queue', { lo: num(lo), hi: num(hi) }))}`}</span>`,
+    );
+    const tr = trafficFor(p.id);
+    if (c.live && tr?.closed) parts.push(`<span class="pm-crowd-live">🚧 ${esc(t('pm.crowd.closed'))}</span>`);
+    else if (c.live && tr && tr.c >= 0.5) parts.push(`<span class="pm-crowd-live">🚦 ${esc(t('pm.crowd.jam'))}</span>`);
+  }
+  const going = goingTo(p.id);
+  if (going >= GOING_MIN) parts.push(`<span class="pm-crowd-live">🔥 ${esc(t('pm.crowd.going', { n: num(going) }))}</span>`);
+  // Best-time tip for the crowded ones, before the Puja or while it's busy.
+  if (tier !== 'C' && (!c || c.level !== 'low')) parts.push(`<span class="pm-crowd-tip">${esc(t('pm.crowd.best'))}</span>`);
+  return parts.length ? `<p class="pm-crowd-row">${parts.join('')}</p>` : '';
+}
+/** Expected queue minutes for a batch right now (0 outside the Puja). */
+const batchQueue = (b: Batch) => b.stops.reduce((m, id) => m + (crowdOf(byId.get(id)!)?.minutes ?? 0), 0);
+
 const batchName = (b: Batch) => t('pm.batch.name', { zone: zoneName(b.zone), n: num(batchNo.get(b.id) ?? 1) });
 const inZone = (zone: string) =>
   state.zone === 'all' || zone === state.zone || (state.zone === OTHER && !NEAR_ZONES.includes(zone));
@@ -281,6 +314,7 @@ function cardHTML(p: Pandal, showZone: boolean, step = 0): string {
   return `<article class="pm-card${visitedNow[p.id] ? ' is-seen' : ''}" id="p-${p.id}">
     <h4>${step ? `<span class="pm-step">${num(step)}</span>` : ''}<a class="pm-link" href="/pandals/${p.id}/"><span lang="${bn() ? 'bn' : 'en'}">${esc(name(p))}</span> <span class="pm-alt" lang="${bn() ? 'en' : 'bn'}">${esc(alt)}</span></a>${seen}</h4>
     <p class="pm-meta">${dist}<span>${esc(p.area)}</span>${zone}${metro}</p>
+    ${crowdHTML(p)}
     ${approx}
     <div class="pm-actions"><a class="btn btn-sm" href="${directionsUrl(p)}" target="_blank" rel="noopener" data-go="${p.id}" aria-label="${esc(`${t('pm.directions')}: ${name(p)}`)}">🧭 ${esc(t('pm.directions'))}</a>${nextBtn}<button type="button" class="btn btn-ghost btn-sm pm-show" data-id="${p.id}">${esc(t('pm.onMap'))}</button></div>
     ${eatNearbyHTML(p)}
@@ -435,6 +469,7 @@ function renderBatchBox(box: HTMLElement, b: Batch) {
   box.innerHTML = `<button type="button" class="pm-batch-close" data-batch-close>${esc(t('pm.batch.all'))}</button>
     <h3>${esc(batchName(b))}</h3>
     <p class="pm-batch-meta">${esc(t('pm.batch.meta', { n: num(stops.length), km: num(b.walkKm.toFixed(1)), time: fmtTime(b.minutes) }))}</p>
+    ${batchQueue(b) >= 15 ? `<p class="small pm-batch-queue">${esc(t('pm.batch.queue', { time: fmtTime(b.minutes + batchQueue(b)) }))}</p>` : ''}
     ${ends.map((e) => `<p class="small">${esc(e)}</p>`).join('')}
     <p class="muted small">${esc(t('pm.batch.lead'))}</p>
     <ol class="pm-hop-stops">${stops.map((p) => `<li><a href="#p-${p.id}">${esc(name(p))}</a></li>`).join('')}</ol>
@@ -563,6 +598,9 @@ export function initFinder() {
   });
   // Approved bookings arrive from the API after first paint.
   addEventListener('sponsors:update', () => renderList());
+  // Live crowd data, and the estimate itself changes with the hour.
+  addEventListener('crowd:update', () => renderList());
+  setInterval(() => document.visibilityState === 'visible' && renderList(), 5 * 60_000);
 
   // The map loads when it comes near the screen.
   const mapEl = $('pm-map');
