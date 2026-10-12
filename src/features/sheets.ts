@@ -1,5 +1,5 @@
 /**
- * Bottom sheets (native <dialog>) for the home dock: schedule, songs, dhak, FAQ.
+ * Bottom sheets (native <dialog>) for the home tool row: FAQ, greeting card, share.
  * Esc and the ✕ close; clicking the dimmed backdrop closes; focus returns to
  * the opener. Page scrolling (incl. Lenis) is paused while a sheet is open.
  */

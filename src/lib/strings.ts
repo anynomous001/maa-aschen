@@ -14,7 +14,7 @@ export const dict: Record<string, Entry> = {
   'hero.title.durga': { bn: 'শুভ দুর্গাপুজো', en: 'Happy Durga Puja' },
   'hero.kicker.puja': { bn: 'দুর্গাপুজো ২০২৬ · ১৬–২১ অক্টোবর', en: 'Durga Puja 2026 · 16–21 October' },
   'hero.title.puja': { bn: 'শুভ শারদীয়া', en: 'Shubho Sharodiya' },
-  'hero.sub.puja': { bn: 'কলকাতা আর জেলার ৬০টির বেশি পুজো এক ম্যাপে — কাছের প্যান্ডেল, মেট্রো আর হাঁটার রুট।', en: '60+ pujas in Kolkata and beyond on one map — pandals near you, the metro and a walking route.' },
+  'hero.sub.puja': { bn: 'কলকাতা আর জেলার ৯০টির বেশি পুজো এক ম্যাপে — কাছের প্যান্ডেল, মেট্রো আর হাঁটার রুট।', en: '90+ pujas in Kolkata and beyond on one map — pandals near you, the metro and a walking route.' },
   'hero.kicker.bijoya': { bn: 'বিজয়া দশমী ২০২৬', en: 'Bijoya Dashami 2026' },
   'hero.title.bijoya': { bn: 'শুভ বিজয়া', en: 'Shubho Bijoya' },
   'hero.sub.bijoya': { bn: 'আসছে বছর আবার হবে। মহালয়ার রেকর্ডিং আর পুজোর গান নিচে রইল।', en: 'Until next year. Mahalaya recordings and Puja songs are below.' },
@@ -22,7 +22,6 @@ export const dict: Record<string, Entry> = {
 
   'ui.close': { bn: 'বন্ধ করুন', en: 'Close' },
   'dock.label': { bn: 'আরও', en: 'More' },
-  'dock.schedule': { bn: 'নির্ঘণ্ট', en: 'Schedule' },
   'dock.faq': { bn: 'প্রশ্নোত্তর', en: 'FAQ' },
   'dock.card': { bn: 'শুভেচ্ছা কার্ড', en: 'Greeting card' },
   'rem.waShort': { bn: 'হোয়াটসঅ্যাপ', en: 'WhatsApp' },
@@ -42,18 +41,8 @@ export const dict: Record<string, Entry> = {
   'vis.label': { bn: 'ভিজিটর', en: 'Visitors' },
 
   // ── Share ──
-  'rem.waText': { bn: 'শুভ দুর্গাপুজো 🙏 কলকাতা আর জেলার ৬০টির বেশি পুজো এক ম্যাপে — আপনার কাছের প্যান্ডেল, মেট্রো আর হাঁটার রুট: {url}', en: 'Happy Durga Puja 🙏 60+ pujas in Kolkata and beyond on one map — pandals near you, the metro and a walking route: {url}' },
+  'rem.waText': { bn: 'শুভ দুর্গাপুজো 🙏 কলকাতা আর জেলার ৯০টির বেশি পুজো এক ম্যাপে — আপনার কাছের প্যান্ডেল, মেট্রো আর হাঁটার রুট: {url}', en: 'Happy Durga Puja 🙏 90+ pujas in Kolkata and beyond on one map — pandals near you, the metro and a walking route: {url}' },
 
-  // ── Schedule ──
-  'sch.title': { bn: 'পুজোর নির্ঘণ্ট ২০২৬', en: 'Puja calendar 2026' },
-  'sch.today': { bn: 'আজ', en: 'Today' },
-  'sch.tomorrow': { bn: 'আগামীকাল', en: 'Tomorrow' },
-  'sch.inDays': { bn: '{n} দিন পরে', en: 'In {n} days' },
-  'sch.done': { bn: 'হয়ে গেছে', en: 'Done' },
-  'sch.note': {
-    bn: 'তারিখ বিশুদ্ধ সিদ্ধান্ত পঞ্জিকা অনুযায়ী (এ বছর সপ্তমী দুদিন)। গুপ্তপ্রেস পঞ্জিকায় অষ্টমী থেকে এক দিন আগে।',
-    en: 'Dates follow the Bisuddha Siddhanta panjika (Saptami spans two days this year). Gupta Press panjika runs one day earlier from Ashtami.',
-  },
 
   // ── FAQ ──
   'faq.title': { bn: 'প্রশ্নোত্তর', en: 'FAQ' },
