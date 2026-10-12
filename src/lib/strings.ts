@@ -196,6 +196,7 @@ export const dict: Record<string, Entry> = {
   'pm.eatNearby': { bn: 'কাছেই খাবার', en: 'Eat nearby' },
   'pm.eatCta': { bn: 'কাছেই আপনার দোকান? এখানে বিজ্ঞাপন দিন — {price}', en: 'Your shop nearby? Advertise here — {price}' },
   'pm.partner': { bn: 'প্যান্ডেল ম্যাপ পার্টনার', en: 'Pandal map partner' },
+  'pm.suggestShort': { bn: 'প্যান্ডেল জানান', en: 'Suggest a pandal' },
   'pm.suggest': { bn: 'নতুন প্যান্ডেল জানান / ভুল লোকেশন রিপোর্ট করুন', en: 'Suggest a pandal / report a wrong location' },
   'pm.suggestText': {
     bn: 'নমস্কার, {site} প্যান্ডেল ম্যাপ নিয়ে: (প্যান্ডেলের নাম, এলাকা, আর ঠিক লোকেশন/গুগল ম্যাপস লিংক লিখুন)',
