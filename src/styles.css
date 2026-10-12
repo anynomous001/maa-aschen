@@ -2795,3 +2795,14 @@ body.has-next-bar .finder {
   color: var(--text);
   line-height: 1.55;
 }
+
+/* "Suggest a pandal" (WhatsApp) in the top tool row */
+a.tool-btn {
+  text-decoration: none;
+}
+.tool-suggest {
+  border-color: rgba(79, 209, 139, 0.55);
+}
+.tool-suggest svg {
+  color: #4fd18b;
+}
