@@ -282,9 +282,9 @@ export default function staticPages() {
         '/en/',
         englishHome(home, dict, site, {
           title: 'Durga Puja 2026 Pandal Map: Pandals Near Me | Ma Aschen',
-          description: 'Durga Puja 2026: 60+ pujas in Kolkata and West Bengal on one map. Find pandals near you, the nearest metro, directions and a walking route.',
+          description: 'Durga Puja 2026: 90+ pujas in Kolkata and West Bengal on one map. Find pandals near you, the nearest metro, directions and a walking route.',
           ogTitle: 'Happy Durga Puja 2026 — pandal map: pandals near you',
-          ogDescription: '60+ pujas in Kolkata and beyond on one map: find pandals near you, the nearest metro and a walking route.',
+          ogDescription: '90+ pujas in Kolkata and beyond on one map: find pandals near you, the nearest metro and a walking route.',
         }),
       );
 
