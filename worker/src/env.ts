@@ -21,6 +21,8 @@ export interface Env {
   DODO_ENVIRONMENT?: string;
   /** Long random string; unlocks /admin endpoints. Unset = admin disabled. */
   ADMIN_TOKEN?: string;
+  /** TomTom Traffic API key (live road traffic next to pandals). Unset = estimates only. */
+  TOMTOM_KEY?: string;
   /** Local development only: "true" enables fake payments when no Razorpay keys are set. */
   ALLOW_MOCK?: string;
 }

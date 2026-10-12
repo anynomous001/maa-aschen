@@ -12,6 +12,8 @@ import { type LatLng, directionsUrl, distanceKm, routeLegs, routeUrl } from '../
 import { scrollToEl } from '../lib/smooth-scroll';
 import { sponsorFor, sponsorHref } from '../lib/sponsors';
 import stationData from '../../data/stations.json';
+import { trafficLevel } from '../../shared/crowd.mjs';
+import { goingTo, reportGo, trafficFor } from './crowd';
 import { type Batch, type Station, type StationHit, makeBatches, nearestStation, walkMinutes } from '../../shared/hopping.mjs';
 
 interface Pandal extends LatLng {
@@ -82,6 +84,8 @@ function visited(): Record<string, number> {
 }
 /** Records that someone set off for these pandals (the last one is where they're headed). */
 function markGo(ids: string[]) {
+  // The API counts where people are heading (🔥 on busy pandals); one report per trip, for its first stop.
+  reportGo(ids.find((id) => byId.has(id) && !visited()[id]) ?? ids[0]);
   const v = visited();
   for (const id of ids) v[id] = Date.now();
   writeStore(VISITED_KEY, v);
@@ -128,6 +132,27 @@ function stationHTML(hit: StationHit | null | undefined): string {
   const line = hit.station.line ? `<i class="line-dot line-${hit.station.line.toLowerCase()}" title="${esc(hit.station.line)}"></i>` : '';
   return `<span class="pm-station">${line}${esc(stationText(hit))}</span>`;
 }
+// ── Live signals, shown only as what they are ──
+// Road traffic: vehicle speed on the nearest road (TomTom) — not the crowd or the queue. Directions taps: our own count.
+/** People who tapped Directions to a pandal in the last hour, shown from this many. */
+const GOING_MIN = 3;
+const agoText = (at: number) => {
+  const m = Math.max(1, Math.round((Date.now() - at) / 60000));
+  return t('pm.live.ago', { n: num(m) });
+};
+function liveHTML(p: Pandal): string {
+  const parts: string[] = [];
+  const tr = trafficFor(p.id);
+  const level = trafficLevel(tr, Date.now());
+  if (tr && level) {
+    const icon = { clear: '🟢', slow: '🟠', heavy: '🔴', closed: '🚧' }[level];
+    parts.push(`<span class="pm-live tr-${level}" title="${esc(t('pm.live.trafficHelp'))}">${icon} ${esc(t('pm.live.traffic.' + level))} · ${esc(agoText(tr.at))}</span>`);
+  }
+  const going = goingTo(p.id);
+  if (going >= GOING_MIN) parts.push(`<span class="pm-live">🧭 ${esc(t('pm.live.going', { n: num(going) }))}</span>`);
+  return parts.length ? `<p class="pm-live-row">${parts.join('')}</p>` : '';
+}
+
 const batchName = (b: Batch) => t('pm.batch.name', { zone: zoneName(b.zone), n: num(batchNo.get(b.id) ?? 1) });
 const inZone = (zone: string) =>
   state.zone === 'all' || zone === state.zone || (state.zone === OTHER && !NEAR_ZONES.includes(zone));
@@ -281,6 +306,7 @@ function cardHTML(p: Pandal, showZone: boolean, step = 0): string {
   return `<article class="pm-card${visitedNow[p.id] ? ' is-seen' : ''}" id="p-${p.id}">
     <h4>${step ? `<span class="pm-step">${num(step)}</span>` : ''}<a class="pm-link" href="/pandals/${p.id}/"><span lang="${bn() ? 'bn' : 'en'}">${esc(name(p))}</span> <span class="pm-alt" lang="${bn() ? 'en' : 'bn'}">${esc(alt)}</span></a>${seen}</h4>
     <p class="pm-meta">${dist}<span>${esc(p.area)}</span>${zone}${metro}</p>
+    ${liveHTML(p)}
     ${approx}
     <div class="pm-actions"><a class="btn btn-sm" href="${directionsUrl(p)}" target="_blank" rel="noopener" data-go="${p.id}" aria-label="${esc(`${t('pm.directions')}: ${name(p)}`)}">🧭 ${esc(t('pm.directions'))}</a>${nextBtn}<button type="button" class="btn btn-ghost btn-sm pm-show" data-id="${p.id}">${esc(t('pm.onMap'))}</button></div>
     ${eatNearbyHTML(p)}
@@ -563,6 +589,9 @@ export function initFinder() {
   });
   // Approved bookings arrive from the API after first paint.
   addEventListener('sponsors:update', () => renderList());
+  // Live crowd data, and the estimate itself changes with the hour.
+  addEventListener('crowd:update', () => renderList());
+  setInterval(() => document.visibilityState === 'visible' && renderList(), 5 * 60_000);
 
   // The map loads when it comes near the screen.
   const mapEl = $('pm-map');

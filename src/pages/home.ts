@@ -1,6 +1,7 @@
 import { initCommon } from '../lib/common';
 import { initMotion } from '../features/motion';
 import { initHeroSeason } from '../features/countdown';
+import { initCrowd } from '../features/crowd';
 import { initFinder } from '../features/finder';
 import { initShare } from '../features/reminders';
 import { initSchedule } from '../features/schedule';
@@ -12,6 +13,7 @@ import { initVisitors } from '../features/visitors';
 initCommon();
 initHeroSeason();
 initFinder();
+initCrowd();
 initShare();
 initSchedule();
 initSheets();

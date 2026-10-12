@@ -2764,3 +2764,34 @@ body.has-next-bar .finder {
   font: 700 13px/1 var(--font-body);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
+
+/* Live signals on cards: road traffic (TomTom) and Directions taps — labelled as exactly what they are */
+.pm-live-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.7rem;
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.pm-live {
+  cursor: help;
+}
+.pm-live-note {
+  margin: 0.1rem 0 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(244, 185, 66, 0.35);
+  border-radius: 12px;
+  background: rgba(16, 19, 42, 0.85);
+  font-size: 0.82rem;
+}
+.pm-live-note summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+.pm-live-note p {
+  margin: 0.4rem 0 0.1rem;
+  color: var(--text);
+  line-height: 1.55;
+}

@@ -4,6 +4,9 @@
  * Visitors      POST /visit, POST /ping, GET /stats
  * Polls         GET  /polls?id=…              totals + this visitor's votes
  *               POST /polls/vote              { id, poll, choice }
+ * Crowds        GET  /crowd                    live road traffic per pandal + Directions taps in the last hour
+ *               POST /go                       { id, pandal } a visitor tapped Directions
+ *               (cron, every 15 min)           TomTom traffic next to a quarter of the pandals, Puja evenings only
  * Sponsors      GET  /availability            which slots / pandals are free
  *               GET  /sponsors                approved, live sponsors (for the site)
  *               GET  /logos/:key              sponsor logos (from R2)
@@ -26,6 +29,7 @@ import { corsHeaders, json, safeEqual } from './http';
 import { createCheckout, dodoConfigured, dodoRefund, verifyDodoWebhook } from './dodo';
 import { createOrder, isMock, paymentsConfigured as razorpayConfigured, refund, verifyCheckout, verifyWebhook } from './razorpay';
 import { checkLogo, validateBooking } from './validate';
+import { PANDAL_IDS, checkTraffic, trafficActive } from './traffic';
 
 export { Bookings, Counter };
 
@@ -118,6 +122,19 @@ export default {
         if (!Object.hasOwn(POLLS, poll) || !POLLS[poll].includes(choice)) return json({ error: 'bad poll or choice' }, cors, 400);
         const results = await counter.vote(id, poll, choice);
         return results ? json(results, cors) : json({ error: 'unknown visitor' }, cors, 403);
+      }
+
+      // ── Crowds ──
+      if (req.method === 'GET' && pathname === '/crowd') {
+        return json(await counter.crowd(), { ...cors, 'Cache-Control': 'public, max-age=120' });
+      }
+      if (req.method === 'POST' && pathname === '/go') {
+        if (Number(req.headers.get('Content-Length') ?? 0) > 200) return json({ error: 'too large' }, cors, 413);
+        const body = (await req.json().catch(() => ({}))) as { id?: unknown; pandal?: unknown };
+        const id = typeof body.id === 'string' ? body.id : '';
+        const pandal = typeof body.pandal === 'string' ? body.pandal : '';
+        if (!VISITOR_ID_RE.test(id) || !PANDAL_IDS.has(pandal)) return json({ error: 'bad request' }, cors, 400);
+        return (await counter.go(id, pandal)) ? json({ ok: true }, cors) : json({ error: 'unknown visitor' }, cors, 403);
       }
 
       // ── Public sponsor data ──
@@ -275,5 +292,12 @@ export default {
       console.error(err);
       return json({ error: 'server_error' }, cors, 500);
     }
+  },
+
+  /** Every 15 minutes (wrangler.toml [triggers]): live road traffic next to a quarter of the pandals. */
+  async scheduled(event: ScheduledController, env: Env): Promise<void> {
+    if (!trafficActive(event.scheduledTime)) return;
+    const update = await checkTraffic(env, event.scheduledTime);
+    await env.COUNTER.get(env.COUNTER.idFromName('global')).setTraffic(update);
   },
 } satisfies ExportedHandler<Env>;
